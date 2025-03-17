@@ -42,9 +42,9 @@ def create():
         # Set default config based on job type
         if form.job_type.data == 'sftp_transfer':
             config = {
-                'source_directory': '',
-                'destination_directory': '',
-                'file_pattern': '*',
+                'source_directory': form.source_directory.data or '',
+                'destination_directory': form.destination_directory.data or '',
+                'file_pattern': form.file_pattern.data or '*',
                 'file_rename_pattern': '',
                 'recursive': False,
                 'create_directories': True,

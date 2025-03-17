@@ -19,6 +19,16 @@ class JobForm(FlaskForm):
     destination_credential_id = SelectField('Destination Credentials', 
                                          validators=[DataRequired()], 
                                          coerce=int)
+    source_directory = StringField('Source Directory', 
+                              validators=[Optional()],
+                              description="Directory on source server to search for files")
+    destination_directory = StringField('Destination Directory', 
+                                   validators=[Optional()],
+                                   description="Directory on destination server to upload files to")
+    file_pattern = StringField('File Pattern', 
+                               validators=[Optional()],
+                               default='*',
+                               description="Glob pattern to match files (e.g. *.txt)")
     submit = SubmitField('Save')
 
 class SftpTransferConfigForm(FlaskForm):

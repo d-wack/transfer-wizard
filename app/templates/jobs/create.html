@@ -94,6 +94,60 @@
                 </div>
             </div>
             
+            <!-- SFTP Transfer Configuration Fields -->
+            <div class="sftp-transfer-config" id="sftp-transfer-config">
+                <h4 class="mt-4 mb-3">SFTP Transfer Configuration</h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.source_directory.label(class="form-label") }}
+                        {% if form.source_directory.errors %}
+                            {{ form.source_directory(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.source_directory.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.source_directory(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">{{ form.source_directory.description }}</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        {{ form.destination_directory.label(class="form-label") }}
+                        {% if form.destination_directory.errors %}
+                            {{ form.destination_directory(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_directory.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.destination_directory(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">{{ form.destination_directory.description }}</div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.file_pattern.label(class="form-label") }}
+                    {% if form.file_pattern.errors %}
+                        {{ form.file_pattern(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.file_pattern.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.file_pattern(class="form-control") }}
+                    {% endif %}
+                    <div class="form-text">{{ form.file_pattern.description }}</div>
+                </div>
+            </div>
+            
+            <!-- SQL to CSV Configuration section would go here in the future -->
+            
             <div class="mb-3">
                 {{ form.schedule.label(class="form-label") }}
                 {% if form.schedule.errors %}
@@ -126,4 +180,27 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the job type select element
+        const jobTypeSelect = document.getElementById('job_type');
+        const sftpConfig = document.getElementById('sftp-transfer-config');
+        
+        // Function to toggle visibility based on job type
+        function toggleConfigVisibility() {
+            if (jobTypeSelect.value === 'sftp_transfer') {
+                sftpConfig.style.display = 'block';
+            } else {
+                sftpConfig.style.display = 'none';
+            }
+        }
+        
+        // Set initial visibility
+        toggleConfigVisibility();
+        
+        // Add event listener for changes to job type
+        jobTypeSelect.addEventListener('change', toggleConfigVisibility);
+    });
+</script>
 {% endblock %}

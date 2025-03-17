@@ -139,20 +139,20 @@
                     <tbody>
                         <tr>
                             <th>Source Path:</th>
-                            <td>{{ job.config.get('source_path', 'Not configured') }}</td>
+                            <td>{{ job.get_config().get('source_directory', 'Not configured') }}</td>
                         </tr>
                         <tr>
                             <th>Destination Path:</th>
-                            <td>{{ job.config.get('destination_path', 'Not configured') }}</td>
+                            <td>{{ job.get_config().get('destination_directory', 'Not configured') }}</td>
                         </tr>
                         <tr>
                             <th>File Pattern:</th>
-                            <td>{{ job.config.get('file_pattern', '*') }}</td>
+                            <td>{{ job.get_config().get('file_pattern', '*') }}</td>
                         </tr>
                         <tr>
                             <th>Delete After Transfer:</th>
                             <td>
-                                {% if job.config.get('delete_after_transfer', False) %}
+                                {% if job.get_config().get('delete_after_download', False) %}
                                 <span class="badge bg-danger">Yes</span>
                                 {% else %}
                                 <span class="badge bg-secondary">No</span>
@@ -166,20 +166,20 @@
                     <tbody>
                         <tr>
                             <th>SQL Query:</th>
-                            <td><pre class="mb-0"><code>{{ job.config.get('sql_query', 'Not configured') }}</code></pre></td>
+                            <td><pre class="mb-0"><code>{{ job.get_config().get('sql_query', 'Not configured') }}</code></pre></td>
                         </tr>
                         <tr>
                             <th>Destination Path:</th>
-                            <td>{{ job.config.get('destination_path', 'Not configured') }}</td>
+                            <td>{{ job.get_config().get('destination_path', 'Not configured') }}</td>
                         </tr>
                         <tr>
                             <th>Filename Template:</th>
-                            <td>{{ job.config.get('filename_template', 'Not configured') }}</td>
+                            <td>{{ job.get_config().get('filename_template', 'Not configured') }}</td>
                         </tr>
                         <tr>
                             <th>Include Headers:</th>
                             <td>
-                                {% if job.config.get('include_headers', True) %}
+                                {% if job.get_config().get('include_headers', True) %}
                                 <span class="badge bg-success">Yes</span>
                                 {% else %}
                                 <span class="badge bg-secondary">No</span>
@@ -188,11 +188,11 @@
                         </tr>
                         <tr>
                             <th>CSV Delimiter:</th>
-                            <td><code>{{ job.config.get('csv_delimiter', ',') }}</code></td>
+                            <td><code>{{ job.get_config().get('csv_delimiter', ',') }}</code></td>
                         </tr>
                         <tr>
                             <th>CSV Quote Character:</th>
-                            <td><code>{{ job.config.get('csv_quotechar', '"') }}</code></td>
+                            <td><code>{{ job.get_config().get('csv_quotechar', '"') }}</code></td>
                         </tr>
                     </tbody>
                 </table>
@@ -208,7 +208,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-history me-2"></i>Execution Logs</h5>
-                <a href="{{ url_for('jobs.view_logs', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
+                <a href="{{ url_for('jobs.logs', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-list me-1"></i>View All Logs
                 </a>
             </div>
