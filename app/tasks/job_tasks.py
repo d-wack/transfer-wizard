@@ -54,6 +54,10 @@ def execute_job(self, job_id):
     """
     print(f"Starting execute_job task for job ID: {job_id}")
     
+    # Configure a specific log file for this job
+    job_log_file = os.path.join(task_log_dir, f"job_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log")
+    job_logger = logger.bind(job_id=str(job_id), task_id=self.request.id)
+    
     from app.models.job import Job
     from app.models.credential import Credential
     from app.models.log import Log
@@ -61,13 +65,14 @@ def execute_job(self, job_id):
     
     # Create Flask app instance and app context
     print("Creating Flask application...")
+    # Set environment variable to indicate this is a worker
+    os.environ['CONTAINER_TYPE'] = 'worker'
     app = create_app()
     print(f"Flask app created: {app}")
     
     task_id = self.request.id
     print(f"Task ID: {task_id}")
     
-    job_logger = logger.bind(job_id=job_id, task_id=task_id)
     job_logger.info(f"Starting job execution task {task_id} for job ID: {job_id}")
     print(f"Basic logging initialized for job ID: {job_id}, task ID: {task_id}")
     

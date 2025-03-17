@@ -1,0 +1,21 @@
+2025-03-17 21:03:11.403 | INFO     | Job 1 - Executing job 'Test Job' (ID: 1)
+2025-03-17 21:03:11.406 | INFO     | Job 1 - Running SFTP transfer job 'Test Job'
+2025-03-17 21:03:11.407 | DEBUG    | Job 1 - Source path: /
+2025-03-17 21:03:11.407 | DEBUG    | Job 1 - Destination path: /
+2025-03-17 21:03:11.407 | DEBUG    | Job 1 - File pattern: *
+2025-03-17 21:03:12.178 | INFO     | Job 1 - SFTP transfer complete: Successfully transferred 1 files
+2025-03-17 21:03:12.184 | INFO     | Job 1 - Files transferred: dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat → test-dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat (1.02 MB)
+2025-03-17 21:03:12.209 | INFO     | Job 1 - Job completed successfully: Successfully transferred 1 files
+2025-03-17 21:03:12.209 | INFO     | Job 1 - Job execution task dc6ec4b0-0a47-4bde-8fc9-3eadf611817d completed with status: success
+2025-03-17 21:03:12.215 | INFO     | Job 1 - Updated task status in job configuration to success
+2025-03-17 21:04:20.627 | INFO     | Job 1 - Starting job execution task d0535127-ee4f-466f-b1c0-695bcf9abf5f for job ID: 1
+2025-03-17 21:04:20.652 | INFO     | Job 1 - Executing job 'Test Job' (ID: 1)
+2025-03-17 21:04:20.655 | INFO     | Job 1 - Running SFTP transfer job 'Test Job'
+2025-03-17 21:04:20.655 | DEBUG    | Job 1 - Source path: /
+2025-03-17 21:04:20.656 | DEBUG    | Job 1 - Destination path: /
+2025-03-17 21:04:20.656 | DEBUG    | Job 1 - File pattern: *
+2025-03-17 21:04:21.413 | INFO     | Job 1 - SFTP transfer complete: Successfully transferred 1 files
+2025-03-17 21:04:21.420 | INFO     | Job 1 - Files transferred: dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat → test-dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat (1.02 MB)
+2025-03-17 21:04:21.431 | INFO     | Job 1 - Job completed successfully: Successfully transferred 1 files
+2025-03-17 21:04:21.431 | INFO     | Job 1 - Job execution task d0535127-ee4f-466f-b1c0-695bcf9abf5f completed with status: success
+2025-03-17 21:04:21.437 | INFO     | Job 1 - Updated task status in job configuration to success

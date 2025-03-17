@@ -53,7 +53,11 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     bcrypt.init_app(app)
-    scheduler.init_app(app)
+    
+    # Initialize scheduler only in web container (not in Celery workers)
+    # This prevents SchedulerAlreadyRunningError in workers
+    if os.environ.get('CONTAINER_TYPE') != 'worker':
+        scheduler.init_app(app)
     
     # Configure Celery with app context
     celery.conf.update(app.config)
@@ -75,7 +79,8 @@ def create_app(config_class=Config):
         return {'now': datetime.datetime.now()}
     
     # Start scheduler
-    scheduler.start()
+    if os.environ.get('CONTAINER_TYPE') != 'worker':
+        scheduler.start()
     
     logger.info(f"Application started with environment: {app.config.get('ENV', 'development')}")
     

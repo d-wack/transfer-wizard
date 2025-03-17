@@ -11,3 +11,5 @@
 2025-03-17 20:57:54.753 | INFO     | app.tasks.job_tasks:execute_job:181 - Job completed successfully: Successfully transferred 1 files
 2025-03-17 20:57:54.753 | INFO     | app.tasks.job_tasks:execute_job:221 - Job execution task b9a27a5f-dce8-4a91-8dff-6d6172cbfa0a completed with status: success
 2025-03-17 20:57:54.759 | INFO     | app.tasks.job_tasks:execute_job:238 - Updated task status in job configuration to success
+2025-03-17 21:00:13.170 | INFO     | app:create_app:44 - Application starting up
+2025-03-17 21:00:48.331 | INFO     | app:create_app:44 - Application starting up
