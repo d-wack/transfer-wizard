@@ -103,6 +103,8 @@ def execute_job(self, job_id):
             # Get job from database
             job = Job.query.get(job_id)
             
+            print(f"Starting job execution for job ID: {job_id}, name: {job.name}, status: {job.last_status}")
+            
             if not job:
                 result['message'] = f"Job with ID {job_id} not found"
                 result['error'] = "Job not found"
@@ -112,7 +114,10 @@ def execute_job(self, job_id):
             if not job.is_active:
                 result['message'] = f"Job '{job.name}' is not active"
                 result['status'] = 'skipped'
+                print(f"Skipping job {job_id} because it is not active")
                 return result
+            
+            # Important: We are NOT checking the last_status here, so jobs should be rerunable regardless of status
             
             # Update job status to running
             job.update_status('running')

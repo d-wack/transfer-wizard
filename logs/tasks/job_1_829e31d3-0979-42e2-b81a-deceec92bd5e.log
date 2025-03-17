@@ -1,0 +1,10 @@
+2025-03-17 20:53:38.825 | INFO     | Job 1 - Executing job 'Test Job' (ID: 1)
+2025-03-17 20:53:38.828 | INFO     | Job 1 - Running SFTP transfer job 'Test Job'
+2025-03-17 20:53:38.829 | DEBUG    | Job 1 - Source path: /
+2025-03-17 20:53:38.829 | DEBUG    | Job 1 - Destination path: /
+2025-03-17 20:53:38.829 | DEBUG    | Job 1 - File pattern: *
+2025-03-17 20:53:39.563 | INFO     | Job 1 - SFTP transfer complete: Successfully transferred 1 files
+2025-03-17 20:53:39.569 | INFO     | Job 1 - Files transferred: dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat (1.02 MB)
+2025-03-17 20:53:39.578 | INFO     | Job 1 - Job completed successfully: Successfully transferred 1 files
+2025-03-17 20:53:39.579 | INFO     | Job 1 - Job execution task 829e31d3-0979-42e2-b81a-deceec92bd5e completed with status: success
+2025-03-17 20:53:39.585 | INFO     | Job 1 - Updated task status in job configuration to success

@@ -291,6 +291,9 @@ def toggle(job_id):
 def run(job_id):
     job = Job.query.get_or_404(job_id)
     
+    # Debug info
+    print(f"Run job request received for job ID: {job_id}, name: {job.name}, status: {job.last_status}")
+    
     # Check ownership
     if job.user_id != current_user.id:
         flash('You do not have permission to access this job', 'danger')
@@ -299,6 +302,9 @@ def run(job_id):
     # Execute the job using Celery
     from app.tasks.job_tasks import execute_job
     task = execute_job.delay(job.id)
+    
+    # Debug info
+    print(f"Celery task created: {task.id}")
     
     # Store task ID in job metadata
     config = job.get_config()

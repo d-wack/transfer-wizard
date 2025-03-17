@@ -1,0 +1,34 @@
+If the Run Now button isn't working properly, there may be JavaScript errors. Check the browser console or add this debugging to view.html:
+
+1. Add console logs to see if the click event is firing:
+```javascript
+// In the Run Job button event listener
+button.addEventListener('click', function() {
+    console.log('Run button clicked');
+    const jobId = this.getAttribute('data-job-id');
+    console.log('Job ID:', jobId);
+    const runForm = document.getElementById('runJobForm');
+    console.log('Form action before:', runForm.action);
+    runForm.action = "{{ url_for('jobs.run', job_id=0) }}".replace('0', jobId);
+    console.log('Form action after:', runForm.action);
+    const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
+    modal.show();
+});
+```
+
+2. Add a confirmation in the form submission:
+```javascript
+// Add this after the modal is shown
+document.getElementById('runJobForm').addEventListener('submit', function(e) {
+    console.log('Form submitted');
+});
+```
+
+3. Check browser network tab to see if POST requests are being sent
+
+4. Try adding a CSRF token if needed:
+```html
+<form id="runJobForm" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-success">Run Job</button>
+</form>

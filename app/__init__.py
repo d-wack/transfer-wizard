@@ -9,6 +9,7 @@ from loguru import logger
 import os
 import sys
 import datetime
+import logging
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -25,20 +26,27 @@ from app.celery_app import celery_app as celery
 # Configure loguru
 logger.remove()  # Remove default handler
 logger.add(sys.stderr, level="INFO")  # Add stderr handler with INFO level
-logger.add("logs/transferwizard_{time}.log", rotation="500 MB", retention="10 days", level="DEBUG")  # Add file handler
+logger.add("logs/transferwizard_{time:%Y-%m-%d_%H-%M-%S_%f}.log", 
+           rotation="500 MB", 
+           retention="10 days", 
+           level="DEBUG")
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
+    # Simplified logging setup to avoid recursion issues
+    # Configure app.logger to write to a file
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    
+    # Don't attempt complex logger integration which caused recursion
+    logger.info("Application starting up")
+    
     # Ensure instance folders exist
     for folder in [app.config['UPLOAD_FOLDER'], app.config['TEMP_FOLDER']]:
         if not os.path.exists(folder):
             os.makedirs(folder)
-    
-    # Create logs directory if it doesn't exist
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
         
     # Initialize extensions with app
     db.init_app(app)

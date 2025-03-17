@@ -323,12 +323,27 @@
         // Run Job button
         document.querySelectorAll('.run-job').forEach(button => {
             button.addEventListener('click', function() {
+                console.log('Run button clicked');
                 const jobId = this.getAttribute('data-job-id');
+                console.log('Job ID:', jobId);
                 const runForm = document.getElementById('runJobForm');
+                console.log('Form action before:', runForm.action);
                 runForm.action = "{{ url_for('jobs.run', job_id=0) }}".replace('0', jobId);
+                console.log('Form action after:', runForm.action);
                 const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
                 modal.show();
+                
+                // Add direct submit button event handler
+                document.querySelector('#runJobForm button[type="submit"]').onclick = function() {
+                    console.log('Submit button clicked directly');
+                    runForm.submit();
+                };
             });
+        });
+        
+        // Add form submission handler
+        document.getElementById('runJobForm').addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
         });
         
         // Toggle Job button
