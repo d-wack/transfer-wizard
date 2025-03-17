@@ -1,1 +1,75 @@
+# Python-specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 .venv/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask-specific
+instance/
+.webassets-cache
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+logs/
+*.log
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env.json
+
+# Docker-specific
+.dockerignore
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# User uploads and media
+media/
+uploads/
+
+# Configuration that might contain sensitive info
+config.py
+
+# Compiled JavaScript
+*.min.js
+
+# Node modules
+node_modules/

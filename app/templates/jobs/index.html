@@ -38,20 +38,20 @@
                         </td>
                         <td>
                             {% if job.last_run %}
-                            {{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}
+                            <span id="job-last-run-{{ job.id }}">{{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                             {% else %}
-                            <span class="text-muted">Never</span>
+                            <span id="job-last-run-{{ job.id }}" class="text-muted">Never</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if job.last_status == 'success' %}
-                            <span class="badge bg-success">Success</span>
+                            <span id="job-status-{{ job.id }}" class="badge bg-success">Success</span>
                             {% elif job.last_status == 'failure' %}
-                            <span class="badge bg-danger">Failure</span>
+                            <span id="job-status-{{ job.id }}" class="badge bg-danger">Failure</span>
                             {% elif job.last_status == 'running' %}
-                            <span class="badge bg-primary">Running</span>
+                            <span id="job-status-{{ job.id }}" class="badge bg-warning">Running</span>
                             {% else %}
-                            <span class="badge bg-secondary">Pending</span>
+                            <span id="job-status-{{ job.id }}" class="badge bg-secondary">Unknown</span>
                             {% endif %}
                         </td>
                         <td>
@@ -103,7 +103,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="runJobForm" method="POST">
-                    <button type="submit" class="btn btn-success">Run Job</button>
+                    <button type="submit" class="btn btn-success run-job-submit">Run Job</button>
                 </form>
             </div>
         </div>
@@ -163,6 +163,8 @@
                 const jobId = this.getAttribute('data-job-id');
                 const runForm = document.getElementById('runJobForm');
                 runForm.action = "{{ url_for('jobs.run', job_id=0) }}".replace('0', jobId);
+                const runButton = runForm.querySelector('.run-job-submit');
+                runButton.setAttribute('data-job-id', jobId);
                 const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
                 modal.show();
             });
@@ -200,6 +202,119 @@
                 modal.show();
             });
         });
+        
+        // Set up status refresh functionality
+        setupStatusRefresh();
     });
+    
+    // Function to dynamically update job statuses
+    function setupStatusRefresh() {
+        // Initial delay before starting refresh (gives page time to fully load)
+        setTimeout(refreshAllJobStatuses, 2000);
+        
+        // Add click handler to job run buttons to show immediate feedback
+        document.querySelectorAll('.run-job-submit').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                // Update to running status immediately for better UX
+                updateJobStatusElement(jobId, 'running', 'Running', 'bg-warning');
+                // Start more frequent polling after running a job
+                scheduleStatusRefresh(jobId, 500); // Poll every 500ms for this specific job
+            });
+        });
+    }
+    
+    // Function to refresh statuses for all jobs
+    function refreshAllJobStatuses() {
+        fetch("{{ url_for('jobs.job_statuses') }}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Refreshing all job statuses:", Object.keys(data).length, "jobs");
+                // Update all job statuses with the data received
+                for (const [jobId, statusData] of Object.entries(data)) {
+                    updateJobStatusElement(
+                        jobId, 
+                        statusData.status, 
+                        formatStatus(statusData.status),
+                        statusData.badge_class
+                    );
+                }
+                // Schedule next refresh
+                setTimeout(refreshAllJobStatuses, 5000); // Refresh every 5 seconds
+            })
+            .catch(error => {
+                console.error('Error refreshing job statuses:', error);
+                // Retry even on error, but after a longer delay
+                setTimeout(refreshAllJobStatuses, 10000);
+            });
+    }
+    
+    // Function to schedule more frequent status refreshes for a specific job
+    function scheduleStatusRefresh(jobId, interval, count = 0) {
+        if (count > 40) { // Stop after ~20 seconds of rapid polling
+            return; // Go back to regular polling interval
+        }
+        
+        fetch(`{{ url_for('jobs.job_status', job_id=0) }}`.replace('0', jobId))
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateJobStatusElement(
+                    jobId, 
+                    data.status, 
+                    formatStatus(data.status),
+                    data.badge_class
+                );
+                
+                // Continue rapid polling only if job is still running
+                if (data.status === 'running') {
+                    setTimeout(() => scheduleStatusRefresh(jobId, interval, count + 1), interval);
+                }
+            })
+            .catch(error => {
+                console.error(`Error refreshing job status for job ${jobId}:`, error);
+                // Use exponential backoff for retries
+                const backoffInterval = Math.min(interval * 1.5, 5000);
+                setTimeout(() => scheduleStatusRefresh(jobId, backoffInterval, count + 1), backoffInterval);
+            });
+    }
+    
+    // Helper function to update job status in the UI
+    function updateJobStatusElement(jobId, status, displayText, badgeClass) {
+        const statusElement = document.querySelector(`#job-status-${jobId}`);
+        if (statusElement) {
+            // Remove all badge classes and add the appropriate one
+            statusElement.className = 'badge ' + badgeClass;
+            statusElement.textContent = displayText;
+            
+            // Also update the last run timestamp if needed
+            const lastRunElement = document.querySelector(`#job-last-run-${jobId}`);
+            if (lastRunElement && status !== 'running') {
+                // Only update if not running (to avoid updating with stale data)
+                fetch(`{{ url_for('jobs.job_status', job_id=0) }}`.replace('0', jobId))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.last_run) {
+                            lastRunElement.textContent = data.last_run;
+                        }
+                    });
+            }
+        }
+    }
+    
+    // Format status text for display
+    function formatStatus(status) {
+        if (!status) return 'Unknown';
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
 </script>
 {% endblock %}

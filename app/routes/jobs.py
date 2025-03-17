@@ -359,3 +359,45 @@ def logs(job_id):
     
     return render_template('jobs/logs.html', title=f'Logs - {job.name}', 
                           job=job, logs=logs_pagination)
+
+@jobs_bp.route('/api/status/<int:job_id>')
+@login_required
+def job_status(job_id):
+    """API endpoint to get the current status of a job for dynamic updates"""
+    job = Job.query.filter_by(id=job_id, user_id=current_user.id).first_or_404()
+    
+    # Return job status as JSON
+    return jsonify({
+        'status': job.last_status or 'unknown',
+        'last_run': job.last_run.strftime('%Y-%m-%d %H:%M:%S') if job.last_run else None,
+        'is_active': job.is_active,
+        'badge_class': {
+            'success': 'bg-success',
+            'failure': 'bg-danger',
+            'running': 'bg-warning',
+            'unknown': 'bg-secondary'
+        }.get(job.last_status, 'bg-secondary')
+    })
+
+@jobs_bp.route('/api/statuses')
+@login_required
+def job_statuses():
+    """API endpoint to get the current status of all jobs for dynamic updates"""
+    jobs = Job.query.filter_by(user_id=current_user.id).all()
+    
+    # Return all job statuses as JSON
+    result = {}
+    for job in jobs:
+        result[job.id] = {
+            'status': job.last_status or 'unknown',
+            'last_run': job.last_run.strftime('%Y-%m-%d %H:%M:%S') if job.last_run else None,
+            'is_active': job.is_active,
+            'badge_class': {
+                'success': 'bg-success',
+                'failure': 'bg-danger',
+                'running': 'bg-warning',
+                'unknown': 'bg-secondary'
+            }.get(job.last_status, 'bg-secondary')
+        }
+    
+    return jsonify(result)

@@ -74,9 +74,9 @@
                             <th>Last Run:</th>
                             <td>
                                 {% if job.last_run %}
-                                {{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}
+                                <span id="job-last-run">{{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                                 {% else %}
-                                <span class="text-muted">Never</span>
+                                <span id="job-last-run" class="text-muted">Never</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -84,13 +84,13 @@
                             <th>Last Status:</th>
                             <td>
                                 {% if job.last_status == 'success' %}
-                                <span class="badge bg-success">Success</span>
+                                <span id="job-status" class="badge bg-success">Success</span>
                                 {% elif job.last_status == 'failure' %}
-                                <span class="badge bg-danger">Failure</span>
+                                <span id="job-status" class="badge bg-danger">Failure</span>
                                 {% elif job.last_status == 'running' %}
-                                <span class="badge bg-primary">Running</span>
+                                <span id="job-status" class="badge bg-warning">Running</span>
                                 {% else %}
-                                <span class="badge bg-secondary">Pending</span>
+                                <span id="job-status" class="badge bg-secondary">Unknown</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -265,8 +265,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="runJobForm" method="POST">
-                    <button type="submit" class="btn btn-success">Run Job</button>
+                <form id="runJobForm" method="POST" action="{{ url_for('jobs.run', job_id=job.id) }}">
+                    <button type="submit" id="runJobSubmit" class="btn btn-success">Run Job</button>
                 </form>
             </div>
         </div>
@@ -286,8 +286,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="toggleJobForm" method="POST">
-                    <button type="submit" class="btn btn-primary">Confirm</button>
+                <form id="toggleJobForm" method="POST" action="{{ url_for('jobs.toggle', job_id=job.id) }}">
+                    <button type="submit" class="btn btn-warning">Confirm</button>
                 </form>
             </div>
         </div>
@@ -308,7 +308,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteJobForm" method="POST">
+                <form id="deleteJobForm" method="POST" action="{{ url_for('jobs.delete', job_id=job.id) }}">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
@@ -321,63 +321,99 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Run Job button
-        document.querySelectorAll('.run-job').forEach(button => {
-            button.addEventListener('click', function() {
-                console.log('Run button clicked');
-                const jobId = this.getAttribute('data-job-id');
-                console.log('Job ID:', jobId);
-                const runForm = document.getElementById('runJobForm');
-                console.log('Form action before:', runForm.action);
-                runForm.action = "{{ url_for('jobs.run', job_id=0) }}".replace('0', jobId);
-                console.log('Form action after:', runForm.action);
-                const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
-                modal.show();
-                
-                // Add direct submit button event handler
-                document.querySelector('#runJobForm button[type="submit"]').onclick = function() {
-                    console.log('Submit button clicked directly');
-                    runForm.submit();
-                };
-            });
-        });
-        
-        // Add form submission handler
-        document.getElementById('runJobForm').addEventListener('submit', function(e) {
-            console.log('Form submit event triggered');
+        document.querySelector('.run-job').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
+            modal.show();
         });
         
         // Toggle Job button
-        document.querySelectorAll('.toggle-job').forEach(button => {
-            button.addEventListener('click', function() {
-                const jobId = this.getAttribute('data-job-id');
-                const isActive = this.classList.contains('btn-secondary');
-                const toggleForm = document.getElementById('toggleJobForm');
-                toggleForm.action = "{{ url_for('jobs.toggle', job_id=0) }}".replace('0', jobId);
-                
-                const message = document.getElementById('toggleJobMessage');
-                message.textContent = isActive ? 
-                    'Are you sure you want to disable this job? It will not run until re-enabled.' : 
-                    'Are you sure you want to enable this job?';
-                
-                const modal = new bootstrap.Modal(document.getElementById('toggleJobModal'));
-                modal.show();
-            });
+        document.querySelector('.toggle-job').addEventListener('click', function() {
+            const isActive = this.classList.contains('btn-secondary');
+            document.getElementById('toggleJobMessage').textContent = isActive ? 
+                'Are you sure you want to disable this job? It will not run until re-enabled.' : 
+                'Are you sure you want to enable this job?';
+            
+            const modal = new bootstrap.Modal(document.getElementById('toggleJobModal'));
+            modal.show();
         });
         
         // Delete Job button
-        document.querySelectorAll('.delete-job').forEach(button => {
-            button.addEventListener('click', function() {
-                const jobId = this.getAttribute('data-job-id');
-                const jobName = this.getAttribute('data-job-name');
-                const deleteForm = document.getElementById('deleteJobForm');
-                deleteForm.action = "{{ url_for('jobs.delete', job_id=0) }}".replace('0', jobId);
-                
-                document.getElementById('deleteJobName').textContent = jobName;
-                
-                const modal = new bootstrap.Modal(document.getElementById('deleteJobModal'));
-                modal.show();
-            });
+        document.querySelector('.delete-job').addEventListener('click', function() {
+            const jobName = this.getAttribute('data-job-name');
+            document.getElementById('deleteJobName').textContent = jobName;
+            const modal = new bootstrap.Modal(document.getElementById('deleteJobModal'));
+            modal.show();
         });
+        
+        // Add submit button event handler - only add visual feedback, the form will submit normally
+        document.getElementById('runJobSubmit').addEventListener('click', function() {
+            // Prevent double submission
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
+            
+            // Update status to running immediately for better UX feedback
+            const statusElement = document.getElementById('job-status');
+            statusElement.className = 'badge bg-warning';
+            statusElement.textContent = 'Running';
+            
+            // Let the form submit naturally
+            return true;
+        });
+        
+        // Initial poll after page load
+        setTimeout(startStatusPolling, 2000);
     });
+    
+    // Function to poll for job status updates
+    function startStatusPolling() {
+        pollJobStatus("{{ job.id }}");
+    }
+    
+    function pollJobStatus(jobId, interval = 1000, count = 0) {
+        // Only do rapid polling for a limited time
+        if (count > 30) {
+            interval = 5000; // Switch to less frequent polling
+        }
+        
+        fetch("{{ url_for('jobs.job_status', job_id=job.id) }}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Received job status:", data);
+                // Update the status badge
+                const statusElement = document.getElementById('job-status');
+                if (statusElement) {
+                    statusElement.className = 'badge ' + data.badge_class;
+                    statusElement.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                    
+                    // Update last run time if available
+                    if (data.last_run) {
+                        const lastRunElement = document.getElementById('job-last-run');
+                        if (lastRunElement) {
+                            lastRunElement.textContent = data.last_run;
+                            lastRunElement.className = ''; // Remove any text-muted class
+                        }
+                    }
+                }
+                
+                // Continue polling only if job is running or we're still in the initial polling period
+                if (data.status === 'running' || count < 10) {
+                    setTimeout(() => pollJobStatus(jobId, interval, count + 1), interval);
+                } else {
+                    // Schedule occasional refresh
+                    setTimeout(() => pollJobStatus(jobId, 5000, count + 1), 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Error polling job status:', error);
+                // Continue polling even on error but with exponential backoff
+                const backoffInterval = Math.min(interval * 1.5, 10000); // Max 10 seconds
+                setTimeout(() => pollJobStatus(jobId, backoffInterval, count + 1), backoffInterval);
+            });
+    }
 </script>
 {% endblock %}
