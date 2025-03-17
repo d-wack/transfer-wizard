@@ -1,0 +1,15 @@
+{% macro job_type_badge(job_type) %}
+    {% if job_type == 'sftp_transfer' %}
+        <span class="badge bg-info">
+            <i class="fas fa-exchange-alt me-1"></i>SFTP Transfer
+        </span>
+    {% elif job_type == 'sql_to_csv' %}
+        <span class="badge bg-primary">
+            <i class="fas fa-database me-1"></i>SQL to CSV
+        </span>
+    {% else %}
+        <span class="badge bg-secondary">
+            <i class="fas fa-question-circle me-1"></i>{{ job_type|replace('_', ' ')|title }}
+        </span>
+    {% endif %}
+{% endmacro %}

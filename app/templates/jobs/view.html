@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas {% if job.job_type == 'sftp_transfer' %}fa-exchange-alt{% else %}fa-database{% endif %} me-2"></i>
+        {{ job.name }}
+    </h1>
+    <div class="btn-group">
+        <a href="{{ url_for('jobs.edit', job_id=job.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit me-1"></i>Edit
+        </a>
+        <a href="{{ url_for('jobs.configure', job_id=job.id) }}" class="btn btn-warning">
+            <i class="fas fa-cog me-1"></i>Configure
+        </a>
+        <button class="btn {% if job.is_active %}btn-secondary{% else %}btn-success{% endif %} toggle-job" data-job-id="{{ job.id }}">
+            <i class="fas {% if job.is_active %}fa-pause{% else %}fa-play-circle{% endif %} me-1"></i>
+            {% if job.is_active %}Disable{% else %}Enable{% endif %}
+        </button>
+        <button class="btn btn-success run-job" data-job-id="{{ job.id }}">
+            <i class="fas fa-play me-1"></i>Run Now
+        </button>
+        <button class="btn btn-danger delete-job" data-job-id="{{ job.id }}" data-job-name="{{ job.name }}">
+            <i class="fas fa-trash me-1"></i>Delete
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Job Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge {% if job.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if job.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Type:</th>
+                            <td>{{ job.job_type|replace('_', ' ')|title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ job.description or 'No description' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Schedule:</th>
+                            <td>
+                                {% if job.schedule %}
+                                <code>{{ job.schedule }}</code>
+                                {% else %}
+                                <span class="text-muted">Manual execution only</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Next Run:</th>
+                            <td>
+                                {% if job.next_run and job.is_active %}
+                                {{ job.next_run.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                <span class="text-muted">Not scheduled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Last Run:</th>
+                            <td>
+                                {% if job.last_run %}
+                                {{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                <span class="text-muted">Never</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Last Status:</th>
+                            <td>
+                                {% if job.last_status == 'success' %}
+                                <span class="badge bg-success">Success</span>
+                                {% elif job.last_status == 'failure' %}
+                                <span class="badge bg-danger">Failure</span>
+                                {% elif job.last_status == 'running' %}
+                                <span class="badge bg-primary">Running</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Updated:</th>
+                            <td>{{ job.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Source</h6>
+                        <p>
+                            <strong>Name:</strong> {{ job.source_credential.name }}<br>
+                            <strong>Type:</strong> {{ job.source_credential.credential_type|upper }}<br>
+                            <strong>Server:</strong> {{ job.source_credential.hostname }}:{{ job.source_credential.port }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Destination</h6>
+                        <p>
+                            <strong>Name:</strong> {{ job.destination_credential.name }}<br>
+                            <strong>Type:</strong> {{ job.destination_credential.credential_type|upper }}<br>
+                            <strong>Server:</strong> {{ job.destination_credential.hostname }}:{{ job.destination_credential.port }}
+                        </p>
+                    </div>
+                </div>
+                
+                <h6>Transfer Details</h6>
+                {% if job.job_type == 'sftp_transfer' %}
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>Source Path:</th>
+                            <td>{{ job.config.get('source_path', 'Not configured') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Destination Path:</th>
+                            <td>{{ job.config.get('destination_path', 'Not configured') }}</td>
+                        </tr>
+                        <tr>
+                            <th>File Pattern:</th>
+                            <td>{{ job.config.get('file_pattern', '*') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Delete After Transfer:</th>
+                            <td>
+                                {% if job.config.get('delete_after_transfer', False) %}
+                                <span class="badge bg-danger">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% elif job.job_type == 'sql_to_csv' %}
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>SQL Query:</th>
+                            <td><pre class="mb-0"><code>{{ job.config.get('sql_query', 'Not configured') }}</code></pre></td>
+                        </tr>
+                        <tr>
+                            <th>Destination Path:</th>
+                            <td>{{ job.config.get('destination_path', 'Not configured') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Filename Template:</th>
+                            <td>{{ job.config.get('filename_template', 'Not configured') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Include Headers:</th>
+                            <td>
+                                {% if job.config.get('include_headers', True) %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>CSV Delimiter:</th>
+                            <td><code>{{ job.config.get('csv_delimiter', ',') }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>CSV Quote Character:</th>
+                            <td><code>{{ job.config.get('csv_quotechar', '"') }}</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('jobs.configure', job_id=job.id) }}" class="btn btn-warning btn-sm">
+                    <i class="fas fa-cog me-1"></i>Update Configuration
+                </a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Execution Logs</h5>
+                <a href="{{ url_for('jobs.view_logs', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list me-1"></i>View All Logs
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    {% if log.status == 'success' %}
+                                    <span class="badge bg-success">Success</span>
+                                    {% elif log.status == 'failure' %}
+                                    <span class="badge bg-danger">Failure</span>
+                                    {% elif log.status == 'warning' %}
+                                    <span class="badge bg-warning">Warning</span>
+                                    {% else %}
+                                    <span class="badge bg-info">Info</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.message }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center">No execution logs available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Run Job Confirmation Modal -->
+<div class="modal fade" id="runJobModal" tabindex="-1" aria-labelledby="runJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="runJobModalLabel">Run Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to run this job now?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="runJobForm" method="POST">
+                    <button type="submit" class="btn btn-success">Run Job</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toggle Job Confirmation Modal -->
+<div class="modal fade" id="toggleJobModal" tabindex="-1" aria-labelledby="toggleJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="toggleJobModalLabel">Enable/Disable Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="toggleJobMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="toggleJobForm" method="POST">
+                    <button type="submit" class="btn btn-primary">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Job Confirmation Modal -->
+<div class="modal fade" id="deleteJobModal" tabindex="-1" aria-labelledby="deleteJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteJobModalLabel">Delete Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the job <strong id="deleteJobName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. All job logs will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteJobForm" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Run Job button
+        document.querySelectorAll('.run-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const runForm = document.getElementById('runJobForm');
+                runForm.action = "{{ url_for('jobs.run_job', job_id=0) }}".replace('0', jobId);
+                const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
+                modal.show();
+            });
+        });
+        
+        // Toggle Job button
+        document.querySelectorAll('.toggle-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const isActive = this.classList.contains('btn-secondary');
+                const toggleForm = document.getElementById('toggleJobForm');
+                toggleForm.action = "{{ url_for('jobs.toggle', job_id=0) }}".replace('0', jobId);
+                
+                const message = document.getElementById('toggleJobMessage');
+                message.textContent = isActive ? 
+                    'Are you sure you want to disable this job? It will not run until re-enabled.' : 
+                    'Are you sure you want to enable this job?';
+                
+                const modal = new bootstrap.Modal(document.getElementById('toggleJobModal'));
+                modal.show();
+            });
+        });
+        
+        // Delete Job button
+        document.querySelectorAll('.delete-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const jobName = this.getAttribute('data-job-name');
+                const deleteForm = document.getElementById('deleteJobForm');
+                deleteForm.action = "{{ url_for('jobs.delete', job_id=0) }}".replace('0', jobId);
+                
+                document.getElementById('deleteJobName').textContent = jobName;
+                
+                const modal = new bootstrap.Modal(document.getElementById('deleteJobModal'));
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

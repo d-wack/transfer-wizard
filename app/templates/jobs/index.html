@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tasks me-2"></i>Jobs</h1>
+    <a href="{{ url_for('jobs.create') }}" class="btn btn-primary">
+        <i class="fas fa-plus-circle me-1"></i>Create Job
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if jobs %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Schedule</th>
+                        <th>Last Run</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('jobs.view', job_id=job.id) }}">{{ job.name }}</a>
+                        </td>
+                        <td>{{ job.job_type|replace('_', ' ')|title }}</td>
+                        <td>
+                            {% if job.schedule %}
+                            <code>{{ job.schedule }}</code>
+                            {% else %}
+                            <span class="text-muted">Manual execution</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.last_run %}
+                            {{ job.last_run.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% else %}
+                            <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.last_status == 'success' %}
+                            <span class="badge bg-success">Success</span>
+                            {% elif job.last_status == 'failure' %}
+                            <span class="badge bg-danger">Failure</span>
+                            {% elif job.last_status == 'running' %}
+                            <span class="badge bg-primary">Running</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-sm btn-info" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('jobs.edit', job_id=job.id) }}" class="btn btn-sm btn-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('jobs.configure', job_id=job.id) }}" class="btn btn-sm btn-warning" title="Configure">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-success run-job" title="Run Now" data-job-id="{{ job.id }}">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm {% if job.is_active %}btn-secondary{% else %}btn-success{% endif %} toggle-job" title="{% if job.is_active %}Disable{% else %}Enable{% endif %}" data-job-id="{{ job.id }}">
+                                    <i class="fas {% if job.is_active %}fa-pause{% else %}fa-play-circle{% endif %}"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger delete-job" title="Delete" data-job-id="{{ job.id }}" data-job-name="{{ job.name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0 text-center">No jobs found. <a href="{{ url_for('jobs.create') }}">Create your first job</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Run Job Confirmation Modal -->
+<div class="modal fade" id="runJobModal" tabindex="-1" aria-labelledby="runJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="runJobModalLabel">Run Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to run this job now?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="runJobForm" method="POST">
+                    <button type="submit" class="btn btn-success">Run Job</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toggle Job Confirmation Modal -->
+<div class="modal fade" id="toggleJobModal" tabindex="-1" aria-labelledby="toggleJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="toggleJobModalLabel">Enable/Disable Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="toggleJobMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="toggleJobForm" method="POST">
+                    <button type="submit" class="btn btn-primary">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Job Confirmation Modal -->
+<div class="modal fade" id="deleteJobModal" tabindex="-1" aria-labelledby="deleteJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteJobModalLabel">Delete Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the job <strong id="deleteJobName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone. All job logs will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteJobForm" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Run Job button
+        document.querySelectorAll('.run-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const runForm = document.getElementById('runJobForm');
+                runForm.action = "{{ url_for('jobs.run_job', job_id=0) }}".replace('0', jobId);
+                const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
+                modal.show();
+            });
+        });
+        
+        // Toggle Job button
+        document.querySelectorAll('.toggle-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const isActive = this.classList.contains('btn-secondary');
+                const toggleForm = document.getElementById('toggleJobForm');
+                toggleForm.action = "{{ url_for('jobs.toggle', job_id=0) }}".replace('0', jobId);
+                
+                const message = document.getElementById('toggleJobMessage');
+                message.textContent = isActive ? 
+                    'Are you sure you want to disable this job? It will not run until re-enabled.' : 
+                    'Are you sure you want to enable this job?';
+                
+                const modal = new bootstrap.Modal(document.getElementById('toggleJobModal'));
+                modal.show();
+            });
+        });
+        
+        // Delete Job button
+        document.querySelectorAll('.delete-job').forEach(button => {
+            button.addEventListener('click', function() {
+                const jobId = this.getAttribute('data-job-id');
+                const jobName = this.getAttribute('data-job-name');
+                const deleteForm = document.getElementById('deleteJobForm');
+                deleteForm.action = "{{ url_for('jobs.delete', job_id=0) }}".replace('0', jobId);
+                
+                document.getElementById('deleteJobName').textContent = jobName;
+                
+                const modal = new bootstrap.Modal(document.getElementById('deleteJobModal'));
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

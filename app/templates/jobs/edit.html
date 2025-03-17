@@ -1,0 +1,120 @@
+{% extends "jobs/job_form_base.html" %}
+{% set edit_mode = True %}
+{% set action_url = url_for('jobs.edit', job_id=job.id) %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-edit me-2"></i>Edit Job: {{ job.name }}</h1>
+    <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Job
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('jobs.edit', job_id=job.id) }}" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {% if form.name.errors %}
+                    {{ form.name(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.name(class="form-control") }}
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {% if form.description.errors %}
+                    {{ form.description(class="form-control is-invalid", rows=3) }}
+                    <div class="invalid-feedback">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.description(class="form-control", rows=3) }}
+                {% endif %}
+                <div class="form-text">Optional description for this job.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Job Type</label>
+                <input type="text" class="form-control" value="{{ job.job_type|replace('_', ' ')|title }}" readonly>
+                <div class="form-text">Job type cannot be changed after creation.</div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.source_credential_id.label(class="form-label") }}
+                    {% if form.source_credential_id.errors %}
+                        {{ form.source_credential_id(class="form-select is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.source_credential_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.source_credential_id(class="form-select") }}
+                    {% endif %}
+                    <div class="form-text">
+                        <a href="{{ url_for('credentials.create') }}" target="_blank">Create new credential</a>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    {{ form.destination_credential_id.label(class="form-label") }}
+                    {% if form.destination_credential_id.errors %}
+                        {{ form.destination_credential_id(class="form-select is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.destination_credential_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.destination_credential_id(class="form-select") }}
+                    {% endif %}
+                    <div class="form-text">
+                        <a href="{{ url_for('credentials.create') }}" target="_blank">Create new credential</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.schedule.label(class="form-label") }}
+                {% if form.schedule.errors %}
+                    {{ form.schedule(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.schedule.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.schedule(class="form-control") }}
+                {% endif %}
+                <div class="form-text">
+                    Cron expression format: <code>minute hour day_of_month month day_of_week</code><br>
+                    Example: <code>0 3 * * *</code> (runs at 3:00 AM every day)<br>
+                    Leave blank for manual execution only.
+                </div>
+            </div>
+            
+            <div class="mb-3 form-check">
+                {{ form.is_active(class="form-check-input") }}
+                {{ form.is_active.label(class="form-check-label") }}
+                <div class="form-text">If unchecked, the job will not run automatically.</div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

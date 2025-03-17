@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center mt-5">
+    <div class="error-icon mb-4">
+        <i class="fas fa-bug fa-5x text-danger"></i>
+    </div>
+    <h1 class="display-4">500 - Server Error</h1>
+    <p class="lead">Something went wrong on our end.</p>
+    <hr class="my-4">
+    <p>We're sorry for the inconvenience. Our team has been notified and we're working on the issue.</p>
+    <div class="mt-4">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-home me-2"></i>Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

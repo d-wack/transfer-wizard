@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cog me-2"></i>Configure SFTP Transfer</h1>
+    <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Job
+    </a>
+</div>
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i> Configure settings for transferring files between SFTP servers.
+</div>
+
+<form method="POST" action="{{ url_for('jobs.configure', job_id=job.id) }}" novalidate>
+    {{ form.hidden_tag() }}
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-download me-2"></i>Source SFTP Server</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.source_credential_id.label(class="form-label") }}
+                        {% if form.source_credential_id.errors %}
+                            {{ form.source_credential_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.source_credential_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.source_credential_id(class="form-select") }}
+                        {% endif %}
+                        <div class="form-text">
+                            The SFTP server to download files from.
+                            {% if sftp_credentials|length == 0 %}
+                            <span class="text-danger">No SFTP credentials available. <a href="{{ url_for('credentials.create', type='sftp') }}">Create one now</a>.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.source_directory.label(class="form-label") }}
+                        {% if form.source_directory.errors %}
+                            {{ form.source_directory(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.source_directory.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.source_directory(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Directory on the source server to search for files.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.file_pattern.label(class="form-label") }}
+                        {% if form.file_pattern.errors %}
+                            {{ form.file_pattern(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.file_pattern.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.file_pattern(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Pattern to match files (e.g., "*.csv" for all CSV files).
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.recursive(class="form-check-input") }}
+                        {{ form.recursive.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, searches for files in subdirectories recursively.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.delete_after_download(class="form-check-input") }}
+                        {{ form.delete_after_download.label(class="form-check-label") }}
+                        <div class="form-text text-warning">
+                            If checked, files will be deleted from the source server after successful download.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Destination SFTP Server</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.destination_credential_id.label(class="form-label") }}
+                        {% if form.destination_credential_id.errors %}
+                            {{ form.destination_credential_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_credential_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.destination_credential_id(class="form-select") }}
+                        {% endif %}
+                        <div class="form-text">
+                            The SFTP server to upload files to.
+                            {% if sftp_credentials|length == 0 %}
+                            <span class="text-danger">No SFTP credentials available. <a href="{{ url_for('credentials.create', type='sftp') }}">Create one now</a>.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.destination_directory.label(class="form-label") }}
+                        {% if form.destination_directory.errors %}
+                            {{ form.destination_directory(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_directory.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.destination_directory(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Directory on the destination server to upload files to.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.file_rename_pattern.label(class="form-label") }}
+                        {% if form.file_rename_pattern.errors %}
+                            {{ form.file_rename_pattern(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.file_rename_pattern.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.file_rename_pattern(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Optional pattern to rename files during transfer. Use {filename} for original filename, 
+                            {timestamp} for current timestamp, and {uuid} for a unique identifier.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.create_directories(class="form-check-input") }}
+                        {{ form.create_directories.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, creates destination directories if they don't exist.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.overwrite_existing(class="form-check-input") }}
+                        {{ form.overwrite_existing.label(class="form-check-label") }}
+                        <div class="form-text text-warning">
+                            If checked, overwrites files on the destination server if they already exist.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Additional Options</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.max_file_age_days.label(class="form-label") }}
+                        {% if form.max_file_age_days.errors %}
+                            {{ form.max_file_age_days(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.max_file_age_days.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.max_file_age_days(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Maximum age of files to transfer in days (0 = no limit).
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.max_files_per_run.label(class="form-label") }}
+                        {% if form.max_files_per_run.errors %}
+                            {{ form.max_files_per_run(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.max_files_per_run.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.max_files_per_run(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Maximum number of files to transfer per run (0 = no limit).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="mb-3 form-check">
+                {{ form.fail_on_empty.label(class="form-check-label") }}
+                {{ form.fail_on_empty(class="form-check-input") }}
+                <div class="form-text">
+                    If checked, the job will fail if no files are found for transfer.
+                </div>
+            </div>
+            
+            <div class="mb-3 form-check">
+                {{ form.preserve_timestamps.label(class="form-check-label") }}
+                {{ form.preserve_timestamps(class="form-check-input") }}
+                <div class="form-text">
+                    If checked, preserves original file timestamps during transfer.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+{% endblock %}

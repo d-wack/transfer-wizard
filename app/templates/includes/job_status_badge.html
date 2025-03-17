@@ -1,0 +1,15 @@
+{% macro job_status_badge(status) %}
+    {% if status == 'success' %}
+        <span class="badge bg-success">Success</span>
+    {% elif status == 'running' %}
+        <span class="badge bg-primary">Running</span>
+    {% elif status == 'pending' %}
+        <span class="badge bg-warning text-dark">Pending</span>
+    {% elif status == 'failed' %}
+        <span class="badge bg-danger">Failed</span>
+    {% elif status == 'canceled' %}
+        <span class="badge bg-secondary">Canceled</span>
+    {% else %}
+        <span class="badge bg-light text-dark">Unknown</span>
+    {% endif %}
+{% endmacro %}

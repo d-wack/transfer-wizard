@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-history me-2"></i>Job Logs: {{ job.name }}</h1>
+    <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Job
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Execution History</h5>
+            <div>
+                <form class="d-flex" method="GET" action="{{ url_for('jobs.view_logs', job_id=job.id) }}">
+                    <select name="status" class="form-select form-select-sm me-2" style="width: auto;">
+                        <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+                        <option value="success" {% if status == 'success' %}selected{% endif %}>Success</option>
+                        <option value="failure" {% if status == 'failure' %}selected{% endif %}>Failure</option>
+                        <option value="warning" {% if status == 'warning' %}selected{% endif %}>Warning</option>
+                        <option value="info" {% if status == 'info' %}selected{% endif %}>Info</option>
+                    </select>
+                    <input type="date" name="date" class="form-control form-control-sm me-2" style="width: auto;" value="{{ date if date }}">
+                    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>Message</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if log.status == 'success' %}
+                            <span class="badge bg-success">Success</span>
+                            {% elif log.status == 'failure' %}
+                            <span class="badge bg-danger">Failure</span>
+                            {% elif log.status == 'warning' %}
+                            <span class="badge bg-warning">Warning</span>
+                            {% else %}
+                            <span class="badge bg-info">Info</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.message }}</td>
+                        <td>
+                            {% if log.details %}
+                            <button class="btn btn-sm btn-outline-info view-details" data-log-id="{{ log.id }}">
+                                <i class="fas fa-info-circle"></i> View
+                            </button>
+                            {% else %}
+                            <span class="text-muted">No details</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('jobs.view_logs', job_id=job.id, page=page-1, status=status, date=date) }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('jobs.view_logs', job_id=job.id, page=p, status=status, date=date) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('jobs.view_logs', job_id=job.id, page=page+1, status=status, date=date) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0 text-center">No logs found for this job.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailsModalLabel">Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="logDetailsContent" class="p-3 bg-light border rounded"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // View log details
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const logId = this.getAttribute('data-log-id');
+                
+                // Fetch log details via AJAX
+                fetch(`{{ url_for('jobs.get_log_details', job_id=job.id) }}?log_id=${logId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('logDetailsContent').textContent = data.details;
+                        const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+                        modal.show();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching log details:', error);
+                        alert('Error fetching log details. Please try again.');
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

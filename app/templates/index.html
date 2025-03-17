@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="px-4 py-5 my-5 text-center">
+    <h1 class="display-5 fw-bold"><i class="fas fa-exchange-alt me-3"></i>TransferWizard</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">
+            A powerful solution for automating file transfers between SFTP servers and exporting SQL query results to CSV files.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-user-plus me-2"></i>Register
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container px-4 py-5">
+    <h2 class="pb-2 border-bottom">Key Features</h2>
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-bg-light d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                <i class="fas fa-exchange-alt text-primary"></i>
+            </div>
+            <div>
+                <h3>SFTP to SFTP Transfers</h3>
+                <p>Easily configure automated file transfers between SFTP servers with pattern matching and scheduling.</p>
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-bg-light d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                <i class="fas fa-database text-primary"></i>
+            </div>
+            <div>
+                <h3>SQL to CSV Exports</h3>
+                <p>Run SQL queries against MSSQL databases, export the results to CSV files, and automatically upload them to SFTP servers.</p>
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-bg-light d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                <i class="fas fa-chart-line text-primary"></i>
+            </div>
+            <div>
+                <h3>Reports & Monitoring</h3>
+                <p>Track job executions with detailed logs and receive daily reports to ensure your transfers are running smoothly.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

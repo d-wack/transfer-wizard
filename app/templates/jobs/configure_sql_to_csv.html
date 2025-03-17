@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cog me-2"></i>Configure SQL to CSV</h1>
+    <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Job
+    </a>
+</div>
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i> Configure settings for exporting SQL query results to CSV files and uploading them to an SFTP server.
+</div>
+
+<form method="POST" action="{{ url_for('jobs.configure', job_id=job.id) }}" novalidate>
+    {{ form.hidden_tag() }}
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-database me-2"></i>SQL Database Source</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.source_credential_id.label(class="form-label") }}
+                        {% if form.source_credential_id.errors %}
+                            {{ form.source_credential_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.source_credential_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.source_credential_id(class="form-select") }}
+                        {% endif %}
+                        <div class="form-text">
+                            The MSSQL database to run the query against.
+                            {% if mssql_credentials|length == 0 %}
+                            <span class="text-danger">No MSSQL credentials available. <a href="{{ url_for('credentials.create', type='mssql') }}">Create one now</a>.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.sql_query.label(class="form-label") }}
+                        {% if form.sql_query.errors %}
+                            {{ form.sql_query(class="form-control is-invalid", rows=8) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.sql_query.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.sql_query(class="form-control", rows=8) }}
+                        {% endif %}
+                        <div class="form-text">
+                            The SQL query to execute. The results will be exported to a CSV file.
+                            You can use {date} variables in your query, for example:
+                            <code>SELECT * FROM orders WHERE order_date = '{date-1d}'</code>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.include_headers(class="form-check-input") }}
+                        {{ form.include_headers.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, includes column headers as the first row in the CSV file.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.fail_on_empty_result(class="form-check-input") }}
+                        {{ form.fail_on_empty_result.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, the job will fail if the query returns no results.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>SFTP Destination</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.destination_credential_id.label(class="form-label") }}
+                        {% if form.destination_credential_id.errors %}
+                            {{ form.destination_credential_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_credential_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.destination_credential_id(class="form-select") }}
+                        {% endif %}
+                        <div class="form-text">
+                            The SFTP server to upload the CSV file to.
+                            {% if sftp_credentials|length == 0 %}
+                            <span class="text-danger">No SFTP credentials available. <a href="{{ url_for('credentials.create', type='sftp') }}">Create one now</a>.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.destination_directory.label(class="form-label") }}
+                        {% if form.destination_directory.errors %}
+                            {{ form.destination_directory(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_directory.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.destination_directory(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Directory on the SFTP server to upload the CSV file to.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.filename_pattern.label(class="form-label") }}
+                        {% if form.filename_pattern.errors %}
+                            {{ form.filename_pattern(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.filename_pattern.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.filename_pattern(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Pattern to name the output CSV file. You can use variables:
+                            <ul class="mb-0">
+                                <li><code>{jobname}</code>: Name of this job</li>
+                                <li><code>{timestamp}</code>: Current timestamp (YYYYMMDD_HHMMSS)</li>
+                                <li><code>{date}</code>: Current date (YYYYMMDD)</li>
+                                <li><code>{uuid}</code>: A random UUID</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.create_directory(class="form-check-input") }}
+                        {{ form.create_directory.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, creates the destination directory if it doesn't exist.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.overwrite_existing(class="form-check-input") }}
+                        {{ form.overwrite_existing.label(class="form-check-label") }}
+                        <div class="form-text text-warning">
+                            If checked, overwrites the file on the SFTP server if it already exists.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-file-csv me-2"></i>CSV Format Options</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        {{ form.delimiter.label(class="form-label") }}
+                        {% if form.delimiter.errors %}
+                            {{ form.delimiter(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.delimiter.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.delimiter(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Character used to separate fields.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        {{ form.quotechar.label(class="form-label") }}
+                        {% if form.quotechar.errors %}
+                            {{ form.quotechar(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.quotechar.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.quotechar(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Character used to quote fields.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        {{ form.encoding.label(class="form-label") }}
+                        {% if form.encoding.errors %}
+                            {{ form.encoding(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.encoding.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.encoding(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Character encoding of the CSV file.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        {{ form.date_format.label(class="form-label") }}
+                        {% if form.date_format.errors %}
+                            {{ form.date_format(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.date_format.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.date_format(class="form-control") }}
+                        {% endif %}
+                        <div class="form-text">
+                            Format to use for date/time values.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3 form-check">
+                        {{ form.quoting.label(class="form-label d-block") }}
+                        <div class="form-check">
+                            {% for subfield in form.quoting %}
+                                <div class="form-check">
+                                    {{ subfield(class="form-check-input") }}
+                                    {{ subfield.label(class="form-check-label") }}
+                                </div>
+                            {% endfor %}
+                            {% if form.quoting.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.quoting.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">
+                            Quoting behavior for the CSV export.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3 form-check">
+                        {{ form.add_bom(class="form-check-input") }}
+                        {{ form.add_bom.label(class="form-check-label") }}
+                        <div class="form-text">
+                            If checked, adds a Byte Order Mark (BOM) to the CSV file.
+                            This helps Excel properly recognize UTF-8 encoding.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.null_value_handling.label(class="form-label d-block") }}
+                        <div class="form-check">
+                            {% for subfield in form.null_value_handling %}
+                                <div class="form-check">
+                                    {{ subfield(class="form-check-input") }}
+                                    {{ subfield.label(class="form-check-label") }}
+                                </div>
+                            {% endfor %}
+                            {% if form.null_value_handling.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.null_value_handling.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">
+                            How to handle NULL values in the query results.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{{ url_for('jobs.view', job_id=job.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+{% endblock %}
