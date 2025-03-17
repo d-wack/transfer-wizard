@@ -3,6 +3,9 @@ import pysftp
 import fnmatch
 import tempfile
 from paramiko.ssh_exception import SSHException
+import datetime
+import uuid
+import random
 
 class SftpTransfer:
     """Handler for SFTP to SFTP file transfers."""
@@ -21,6 +24,7 @@ class SftpTransfer:
         dest_path = self.config.get('destination_directory') or self.config.get('destination_path')
         file_pattern = self.config.get('file_pattern', '*')
         delete_after = self.config.get('delete_after_transfer', False)
+        file_rename_pattern = self.config.get('file_rename_pattern', '')
         
         if not source_path or not dest_path:
             raise ValueError("Source or destination path not specified")
@@ -37,7 +41,7 @@ class SftpTransfer:
                 }
             
             # Upload to destination SFTP
-            self._upload_to_destination(temp_dir, dest_path, source_files)
+            self._upload_to_destination(temp_dir, dest_path, source_files, file_rename_pattern)
             
             # Delete source files if configured
             if delete_after and self.transferred_files:
@@ -103,7 +107,7 @@ class SftpTransfer:
         
         return source_files
     
-    def _upload_to_destination(self, temp_dir, dest_path, filenames):
+    def _upload_to_destination(self, temp_dir, dest_path, filenames, file_rename_pattern=None):
         """Upload files from local temp directory to destination SFTP."""
         dest_creds = self.destination_credential.get_credentials()
         
@@ -139,19 +143,25 @@ class SftpTransfer:
                 # Upload each file
                 for filename in filenames:
                     local_path = os.path.join(temp_dir, filename)
-                    remote_path = os.path.join(dest_path, filename).replace('\\', '/')
+                    
+                    # Apply rename pattern if provided
+                    dest_filename = self._apply_rename_pattern(filename, file_rename_pattern)
+                    remote_path = os.path.join(dest_path, dest_filename).replace('\\', '/')
                     
                     # Get file size for logging
                     file_size = os.path.getsize(local_path)
                     
                     # Log the transfer
-                    print(f"Transferring file: {filename} ({self._format_size(file_size)})")
+                    if filename != dest_filename and file_rename_pattern:
+                        print(f"Transferring file: {filename} as {dest_filename} ({self._format_size(file_size)})")
+                        self.transferred_files.append(f"{filename} → {dest_filename} ({self._format_size(file_size)})")
+                    else:
+                        print(f"Transferring file: {filename} ({self._format_size(file_size)})")
+                        self.transferred_files.append(f"{filename} ({self._format_size(file_size)})")
                     
                     # Upload the file
                     sftp.put(local_path, remote_path)
                     
-                    # Track the transferred file with size
-                    self.transferred_files.append(f"{filename} ({self._format_size(file_size)})")
         except SSHException as e:
             raise RuntimeError(f"SFTP connection error: {str(e)}")
     
@@ -199,6 +209,37 @@ class SftpTransfer:
             # Clean up temp key file if it was created
             if source_creds.get('private_key') and 'key_path' in locals():
                 os.unlink(key_path)
+    
+    def _apply_rename_pattern(self, filename, rename_pattern):
+        """Apply rename pattern to filename."""
+        if not rename_pattern:
+            return filename
+            
+        # Get file parts
+        basename, extension = os.path.splitext(filename)
+        
+        # Define replacement variables
+        replacements = {
+            '{filename}': filename,
+            '{basename}': basename,
+            '{ext}': extension,
+            '{timestamp}': datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
+            '{date}': datetime.datetime.now().strftime('%Y%m%d'),
+            '{time}': datetime.datetime.now().strftime('%H%M%S'),
+            '{uuid}': str(uuid.uuid4()),
+            '{random}': ''.join(random.choices('0123456789abcdef', k=8))
+        }
+        
+        # Apply replacements
+        new_filename = rename_pattern
+        for key, value in replacements.items():
+            new_filename = new_filename.replace(key, value)
+            
+        # If the pattern didn't result in any changes, return original
+        if new_filename == rename_pattern:
+            return filename
+            
+        return new_filename
     
     def _format_size(self, size_bytes):
         """Format file size in human-readable format"""
