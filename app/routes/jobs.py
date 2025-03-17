@@ -8,6 +8,7 @@ from app.forms.job import JobForm, SftpTransferConfigForm, SqlToCsvConfigForm
 from app.jobs.executor import execute_job
 from sqlalchemy import desc
 import json
+from datetime import datetime
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -287,7 +288,7 @@ def toggle(job_id):
 
 @jobs_bp.route('/<int:job_id>/run', methods=['POST'])
 @login_required
-def run_job(job_id):
+def run(job_id):
     job = Job.query.get_or_404(job_id)
     
     # Check ownership
@@ -295,16 +296,31 @@ def run_job(job_id):
         flash('You do not have permission to access this job', 'danger')
         return redirect(url_for('jobs.index'))
     
-    # Execute the job
-    scheduler.add_job(
-        func=execute_job,
-        args=[job.id],
-        id=f'adhoc_job_{job.id}_{job.name}',
-        replace_existing=True
-    )
+    # Execute the job using Celery
+    from app.tasks.job_tasks import execute_job
+    task = execute_job.delay(job.id)
+    
+    # Store task ID in job metadata
+    config = job.get_config()
+    if 'task_ids' not in config:
+        config['task_ids'] = []
+    
+    # Add task to the beginning of the list (most recent first)
+    config['task_ids'].insert(0, {
+        'id': task.id,
+        'timestamp': datetime.utcnow().isoformat(),
+        'status': 'PENDING'
+    })
+    
+    # Keep only the last 10 task IDs
+    if len(config['task_ids']) > 10:
+        config['task_ids'] = config['task_ids'][:10]
+    
+    job.set_config(config)
+    db.session.commit()
     
     flash('Job execution started!', 'success')
-    return redirect(url_for('jobs.index'))
+    return redirect(url_for('jobs.view', job_id=job.id))
 
 @jobs_bp.route('/<int:job_id>')
 @login_required

@@ -325,7 +325,7 @@
             button.addEventListener('click', function() {
                 const jobId = this.getAttribute('data-job-id');
                 const runForm = document.getElementById('runJobForm');
-                runForm.action = "{{ url_for('jobs.run_job', job_id=0) }}".replace('0', jobId);
+                runForm.action = "{{ url_for('jobs.run', job_id=0) }}".replace('0', jobId);
                 const modal = new bootstrap.Modal(document.getElementById('runJobModal'));
                 modal.show();
             });

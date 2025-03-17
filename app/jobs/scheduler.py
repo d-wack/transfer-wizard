@@ -1,4 +1,4 @@
-from app import scheduler, db
+from app import scheduler, db, celery
 from app.models.job import Job
 from app.jobs.executor import execute_job
 from datetime import datetime, timedelta
@@ -20,8 +20,9 @@ def initialize_jobs():
         for job in active_jobs:
             if job.schedule:
                 try:
+                    # Create a scheduler job that will dispatch a Celery task
                     scheduler.add_job(
-                        func=execute_job,
+                        func=dispatch_celery_job,
                         trigger='cron',
                         id=f'job_{job.id}_{job.name}',
                         args=[job.id],
@@ -80,7 +81,7 @@ def update_job_schedule(job_id):
     if job.is_active and job.schedule:
         try:
             scheduler.add_job(
-                func=execute_job,
+                func=dispatch_celery_job,
                 trigger='cron',
                 id=f'job_{job.id}_{job.name}',
                 args=[job.id],
@@ -93,6 +94,10 @@ def update_job_schedule(job_id):
             return False
     
     return True
+
+def dispatch_celery_job(job_id):
+    """Dispatch a Celery task to execute a job."""
+    celery.send_task('execute_job', args=[job_id])
 
 def generate_daily_report():
     """Generate a daily report of job executions."""

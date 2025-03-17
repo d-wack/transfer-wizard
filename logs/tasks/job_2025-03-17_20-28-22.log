@@ -1,0 +1,12 @@
+2025-03-17 20:28:46.248 | INFO     | app:create_app:72 - Application started with environment: development
+2025-03-17 20:28:46.249 | INFO     | app.tasks.job_tasks:execute_job:71 - Starting job execution task af9d9f5e-cf92-4760-818a-849d683ebd9d for job ID: 1
+2025-03-17 20:28:46.299 | INFO     | app.tasks.job_tasks:execute_job:123 - Executing job 'Test Job' (ID: 1)
+2025-03-17 20:28:46.302 | INFO     | app.tasks.job_tasks:execute_job:134 - Running SFTP transfer job 'Test Job'
+2025-03-17 20:28:46.303 | DEBUG    | app.tasks.job_tasks:execute_job:135 - Source path: /
+2025-03-17 20:28:46.303 | DEBUG    | app.tasks.job_tasks:execute_job:136 - Destination path: /
+2025-03-17 20:28:46.303 | DEBUG    | app.tasks.job_tasks:execute_job:137 - File pattern: *
+2025-03-17 20:28:47.042 | INFO     | app.tasks.job_tasks:execute_job:140 - SFTP transfer complete: Successfully transferred 1 files
+2025-03-17 20:28:47.054 | INFO     | app.tasks.job_tasks:execute_job:158 - Files transferred: dummy_20250113125251_8bff0419-a0c9-41c0-bda2-9d6710325172.dat (1.02 MB)
+2025-03-17 20:28:47.064 | INFO     | app.tasks.job_tasks:execute_job:176 - Job completed successfully: Successfully transferred 1 files
+2025-03-17 20:28:47.064 | INFO     | app.tasks.job_tasks:execute_job:216 - Job execution task af9d9f5e-cf92-4760-818a-849d683ebd9d completed with status: success
+2025-03-17 20:28:47.071 | INFO     | app.tasks.job_tasks:execute_job:233 - Updated task status in job configuration to success

@@ -17,8 +17,8 @@ class SftpTransfer:
     def execute(self):
         """Execute the SFTP transfer job."""
         # Get configuration
-        source_path = self.config.get('source_path')
-        dest_path = self.config.get('destination_path')
+        source_path = self.config.get('source_directory') or self.config.get('source_path')
+        dest_path = self.config.get('destination_directory') or self.config.get('destination_path')
         file_pattern = self.config.get('file_pattern', '*')
         delete_after = self.config.get('delete_after_transfer', False)
         
@@ -45,7 +45,8 @@ class SftpTransfer:
         
         return {
             'message': f'Successfully transferred {len(self.transferred_files)} files',
-            'details': '\n'.join(self.transferred_files)
+            'details': '\n'.join(self.transferred_files),
+            'files': self.transferred_files
         }
     
     def _download_from_source(self, source_path, temp_dir, file_pattern):
@@ -139,8 +140,18 @@ class SftpTransfer:
                 for filename in filenames:
                     local_path = os.path.join(temp_dir, filename)
                     remote_path = os.path.join(dest_path, filename).replace('\\', '/')
+                    
+                    # Get file size for logging
+                    file_size = os.path.getsize(local_path)
+                    
+                    # Log the transfer
+                    print(f"Transferring file: {filename} ({self._format_size(file_size)})")
+                    
+                    # Upload the file
                     sftp.put(local_path, remote_path)
-                    self.transferred_files.append(filename)
+                    
+                    # Track the transferred file with size
+                    self.transferred_files.append(f"{filename} ({self._format_size(file_size)})")
         except SSHException as e:
             raise RuntimeError(f"SFTP connection error: {str(e)}")
     
@@ -188,3 +199,11 @@ class SftpTransfer:
             # Clean up temp key file if it was created
             if source_creds.get('private_key') and 'key_path' in locals():
                 os.unlink(key_path)
+    
+    def _format_size(self, size_bytes):
+        """Format file size in human-readable format"""
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.2f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.2f} PB"

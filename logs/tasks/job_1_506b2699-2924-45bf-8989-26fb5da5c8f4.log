@@ -1,0 +1,5 @@
+2025-03-17 20:23:01.816 | INFO     | app.tasks.job_tasks:execute_job:117 - Executing job 'Test Job' (ID: 1)
+2025-03-17 20:23:01.819 | INFO     | app.tasks.job_tasks:execute_job:128 - Running SFTP transfer job 'Test Job'
+2025-03-17 20:23:02.560 | INFO     | app.tasks.job_tasks:execute_job:150 - Job completed successfully: Successfully transferred 1 files
+2025-03-17 20:23:02.560 | INFO     | app.tasks.job_tasks:execute_job:190 - Job execution task 506b2699-2924-45bf-8989-26fb5da5c8f4 completed with status: success
+2025-03-17 20:23:02.567 | INFO     | app.tasks.job_tasks:execute_job:207 - Updated task status in job configuration to success

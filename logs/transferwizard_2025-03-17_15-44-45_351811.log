@@ -1,9 +1,0 @@
-2025-03-17 15:44:45.783 | INFO     | app:create_app:66 - Application started with environment: development
-2025-03-17 15:44:53.324 | INFO     | app.routes.credentials:test:280 - Testing credential ID 1 (TestUser1) of type sftp
-2025-03-17 15:44:53.324 | DEBUG    | app.routes.credentials:test:288 - SFTP connection test initiated: transfer.slicedhealth.com:22 with user testuser1
-2025-03-17 15:44:53.325 | DEBUG    | app.utils.sftp_utils:connect:20 - Attempting to connect to SFTP server: transfer.slicedhealth.com:22 with username: testuser1
-2025-03-17 15:44:53.325 | WARNING  | app.utils.sftp_utils:connect:24 - Host key checking disabled for transfer.slicedhealth.com
-2025-03-17 15:44:53.325 | DEBUG    | app.utils.sftp_utils:connect:47 - Using password authentication
-2025-03-17 15:44:53.347 | ERROR    | app.utils.sftp_utils:connect:63 - Failed to connect to SFTP server: transfer.slicedhealth.com. Error: Error reading SSH protocol banner[Errno 104] Connection reset by peer
-2025-03-17 15:44:53.347 | ERROR    | app.utils.sftp_utils:test_connection:89 - SFTP connection test failed: Error reading SSH protocol banner[Errno 104] Connection reset by peer
-2025-03-17 15:44:53.347 | INFO     | app.routes.credentials:test:327 - Credential test result: False

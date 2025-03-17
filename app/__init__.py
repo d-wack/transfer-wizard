@@ -19,6 +19,9 @@ login_manager.login_message_category = 'info'
 bcrypt = Bcrypt()
 scheduler = APScheduler()
 
+# Create Celery instance (imported, not initialized)
+from app.celery_app import celery_app as celery
+
 # Configure loguru
 logger.remove()  # Remove default handler
 logger.add(sys.stderr, level="INFO")  # Add stderr handler with INFO level
@@ -43,6 +46,9 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     bcrypt.init_app(app)
     scheduler.init_app(app)
+    
+    # Configure Celery with app context
+    celery.conf.update(app.config)
     
     # Import and register blueprints
     from app.routes.main import main_bp
